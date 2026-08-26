@@ -1,0 +1,15 @@
+.env
+.DS_Store
+.idea/
+.venv/
+.tmp_fetch_url_workspace/
+E:*ai_workspace/
+logs/
+data/
+__pycache__/
+*.pyc
+.secrets/
+ui/node_modules/
+ui/.tanstack/tmp/
+ui/tsconfig.tsbuildinfo
+ui/.output/
