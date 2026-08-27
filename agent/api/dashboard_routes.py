@@ -18,6 +18,32 @@ from agent.env_utils import get_env
 
 dashboard_router = APIRouter(prefix="/dashboard/api")
 
+DEFAULT_DASHBOARD_REPO_URL = "https://gitee.com/msb-goldbin/ai_coding"
+
+
+def _default_dashboard_repo_url() -> str:
+    return (
+        get_env("DASHBOARD_DEFAULT_REPO_URL", DEFAULT_DASHBOARD_REPO_URL).strip()
+        or DEFAULT_DASHBOARD_REPO_URL
+    )
+
+
+def _normalize_dashboard_repo_url(repo: str | None) -> str:
+    """兼容页面输入的 Gitee URL、gitee.com/owner/repo 和 owner/repo。"""
+
+    value = (repo or "").strip()
+    if not value:
+        return _default_dashboard_repo_url()
+
+    value = re.sub(r"/+$", "", value)
+    if value.lower().startswith(("https://", "http://")):
+        return value
+    if value.lower().startswith("gitee.com/"):
+        return f"https://{value}"
+    if re.fullmatch(r"[^/\s]+/[^/\s]+(?:\.git)?", value):
+        return f"https://gitee.com/{value}"
+    return value
+
 
 class DashboardThreadCreateRequest(BaseModel):
     prompt: str
@@ -621,6 +647,7 @@ def dashboard_options() -> dict[str, Any]:
 
 @dashboard_router.get("/profile")
 def dashboard_profile() -> dict[str, Any]:
+    default_repo = _default_dashboard_repo_url()
     return {
         "login": "lx-aicoding",
         "email": None,
@@ -628,7 +655,7 @@ def dashboard_profile() -> dict[str, Any]:
         "reasoning_effort": "default",
         "default_subagent_model": None,
         "subagent_reasoning_effort": None,
-        "default_repo": "https://gitee.com/msb-goldbin/ai_coding",
+        "default_repo": default_repo,
         "base_branch": "master",
         "branch_prefix": "lx-aicoding",
         "auto_fix_ci": True,
@@ -639,11 +666,12 @@ def dashboard_profile() -> dict[str, Any]:
 
 @dashboard_router.get("/repos")
 def dashboard_repos() -> dict[str, Any]:
+    default_repo = _default_dashboard_repo_url()
     return {
         "installations": [],
         "repositories": [
             {
-                "full_name": "https://gitee.com/msb-goldbin/ai_coding",
+                "full_name": default_repo,
                 "private": False,
             }
         ],
@@ -660,7 +688,7 @@ async def dashboard_create_thread(
     body: DashboardThreadCreateRequest,
     background_tasks: BackgroundTasks,
 ) -> dict[str, Any]:
-    repo_url = body.repo or "https://gitee.com/msb-goldbin/ai_coding"
+    repo_url = _normalize_dashboard_repo_url(body.repo)
     thread_id = initialize_task_record(repo_url=repo_url, prompt=body.prompt)
     background_tasks.add_task(
         run_task_safely,
@@ -691,7 +719,7 @@ async def dashboard_send_message(
     task = get_task(thread_id)
     if task is None:
         raise HTTPException(status_code=404, detail="thread not found")
-    repo_url = task.get("repo_url") or "https://gitee.com/msb-goldbin/ai_coding"
+    repo_url = _normalize_dashboard_repo_url(task.get("repo_url"))
     initialize_task_record(repo_url=repo_url, prompt=body.content, thread_id=thread_id)
     background_tasks.add_task(
         run_task_safely,
@@ -727,7 +755,7 @@ async def dashboard_approve_thread_plan(
     task = get_task(thread_id)
     if task is None:
         raise HTTPException(status_code=404, detail="thread not found")
-    repo_url = task.get("repo_url") or "https://gitee.com/msb-goldbin/ai_coding"
+    repo_url = _normalize_dashboard_repo_url(task.get("repo_url"))
     background_tasks.add_task(
         run_task_safely,
         repo_url=repo_url,

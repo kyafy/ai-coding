@@ -1,13 +1,10 @@
-/** Normalize Gitee/GitHub repo input to `owner/name`. */
+/** Normalize Gitee repo input to `owner/name`. */
 export function normalizeRepoFullName(raw: string): string | null {
   let v = raw.trim();
   for (const prefix of [
     "https://gitee.com/",
     "http://gitee.com/",
     "gitee.com/",
-    "https://github.com/",
-    "http://github.com/",
-    "github.com/",
   ]) {
     if (v.toLowerCase().startsWith(prefix)) {
       v = v.slice(prefix.length);

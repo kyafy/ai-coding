@@ -1,6 +1,7 @@
 import {
   ArrowUp,
   ChevronDown,
+  GitBranch,
   ImagePlus,
   LoaderCircle,
   Square,
@@ -19,7 +20,6 @@ import {
 import type { ModelOption } from "@/lib/api"
 import type { ImageChunk } from "@/lib/agents/types"
 import type { ModelSelection } from "@/lib/agents/useModelOptions"
-import { RepoSelector } from "@/components/agents/RepoSelector"
 import { formatModelSelection } from "@/lib/agents/useModelOptions"
 import { cn } from "@/lib/utils"
 
@@ -222,11 +222,21 @@ export const CloudPromptBar = memo(function CloudPromptBarComponent({
       )}
     >
       {onRepoChange && (
-        <div className="mb-2 flex items-center gap-2 px-1 text-xs">
-          <RepoSelector
-            repos={repos}
-            selectedRepo={selectedRepo}
-            onRepoChange={onRepoChange}
+        <div className="mb-2 flex min-w-0 items-center gap-2 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 py-2 text-xs shadow-sm">
+          <GitBranch className="size-3.5 shrink-0 text-[color:var(--ui-text-dim)]" />
+          <span className="shrink-0 text-[color:var(--ui-text-muted)]">
+            Gitee 仓库
+          </span>
+          <input
+            type="text"
+            value={selectedRepo ?? ""}
+            onChange={(e) => onRepoChange(e.target.value || null)}
+            placeholder={
+              repos?.[0]?.full_name ?? "https://gitee.com/owner/repo"
+            }
+            disabled={disabled || busy}
+            spellCheck={false}
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--ui-text)] outline-none placeholder:text-[color:var(--ui-text-dim)] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
       )}
